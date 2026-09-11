@@ -1,0 +1,25 @@
+.venv/
+.env
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+*.egg-info/
+
+# Local vector indexes and secrets
+data/vectorstore/*.sqlite3
+data/vectorstore/*.db
+data/vectorstore/chroma/
+data/*.db
+data/*.db-journal
+*.db
+*.db-journal
+
+# Model caches if someone runs sentence-transformers locally
+.cache/
+*.bin
+*.pt

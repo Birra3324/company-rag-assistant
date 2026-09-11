@@ -1,0 +1,19 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8788:8788"
+    environment:
+      APP_ENV: production
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-local}
+      LLM_PROVIDER: ${LLM_PROVIDER:-extractive}
+      VECTOR_BACKEND: ${VECTOR_BACKEND:-sqlite}
+      VECTOR_STORE_PATH: /app/data/vectorstore/rag.sqlite3
+      DOCS_PATH: /app/data/sample_docs
+      AUTO_INGEST_ON_STARTUP: "true"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - rag-index:/app/data/vectorstore
+
+volumes:
+  rag-index:

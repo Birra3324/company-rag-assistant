@@ -1,0 +1,5 @@
+# Optional local transformer embeddings + Chroma backend.
+# Not required for the default demo (hashing embeddings + SQLite cosine).
+# pip install -r requirements-ml.txt
+sentence-transformers>=3.0.0
+chromadb>=0.5.23,<1.1

@@ -1,0 +1,4 @@
+# Vector store directory
+#
+# Runtime files (rag.sqlite3, chroma/) are gitignored.
+# Keep this placeholder so the folder exists in a fresh clone.
