@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 import httpx
 
 from app.core.config import Settings, get_settings
+from app.rag.chunking import stable_title
 from app.rag.embeddings import QUERY_STOP, tokenize
 from app.rag.store import Hit
 
@@ -102,7 +103,7 @@ class ExtractiveGenerator(Generator):
             for _, passage in ranked[:take_n]:
                 if passage.lower() in seen:
                     continue
-                selected.append((passage, hit.title))
+                selected.append((passage, stable_title(hit.title, hit.source)))
                 seen.append(passage.lower())
             if wants_number and not any(re.search(r"[\d$]", text) for text, _ in selected):
                 numeric = next(
@@ -110,18 +111,25 @@ class ExtractiveGenerator(Generator):
                     None,
                 )
                 if numeric:
-                    selected.append((numeric, hit.title))
+                    selected.append((numeric, stable_title(hit.title, hit.source)))
                     seen.append(numeric.lower())
             if selected:
                 break
         if not selected:
-            selected = [(re.sub(r"\s+", " ", hits[0].text).strip()[:320], hits[0].title)]
+            selected = [
+                (
+                    re.sub(r"\s+", " ", hits[0].text).strip()[:320],
+                    stable_title(hits[0].title, hits[0].source),
+                )
+            ]
         body = " ".join(text for text, _ in selected)
         titles: list[str] = []
         for _, title in selected:
-            if title not in titles:
-                titles.append(title)
-        return f"{body}\n\nSources: {'; '.join(titles)}."
+            label = title.strip() or "Untitled"
+            if label not in titles:
+                titles.append(label)
+        numbered = "; ".join(f"[{i}] {name}" for i, name in enumerate(titles, start=1))
+        return f"{body}\n\nSources: {numbered}."
 
 
 class OpenAIGenerator(Generator):
@@ -139,7 +147,8 @@ class OpenAIGenerator(Generator):
         if not hits:
             return ExtractiveGenerator().generate(question, hits)
         context = "\n\n".join(
-            f"[{hit.title} | {hit.source}]\n{hit.text}" for hit in hits
+            f"[{stable_title(hit.title, hit.source)} | {hit.source} | {hit.chunk_id}]\n{hit.text}"
+            for hit in hits
         )
         system = (
             "You are the Vision AI Ops company knowledge assistant. "
@@ -181,7 +190,8 @@ class OllamaGenerator(Generator):
         if not hits:
             return ExtractiveGenerator().generate(question, hits)
         context = "\n\n".join(
-            f"[{hit.title} | {hit.source}]\n{hit.text}" for hit in hits
+            f"[{stable_title(hit.title, hit.source)} | {hit.source} | {hit.chunk_id}]\n{hit.text}"
+            for hit in hits
         )
         prompt = (
             "Answer only from the context. If missing, say you do not know. "

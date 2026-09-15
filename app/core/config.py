@@ -38,9 +38,11 @@ class Settings(BaseSettings):
     # sqlite | chroma — sqlite is the default offline-friendly path
     vector_backend: Literal["sqlite", "chroma"] = "sqlite"
 
-    chunk_size: int = 700
-    chunk_overlap: int = 120
+    # Token counts, not characters — see app/rag/chunking.py
+    chunk_size: int = 180
+    chunk_overlap: int = 40
     retrieve_k: int = 4
+    retrieve_pool: int = 24
     min_retrieve_score: float = 0.08
     auto_ingest_on_startup: bool = True
 

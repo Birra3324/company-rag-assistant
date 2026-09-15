@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from app.core.config import get_settings
 from app.core.logging import get_request_id
 from app.models.schemas import AskIn, AskOut, SourceOut
+from app.rag.chunking import stable_title
 from app.rag.pipeline import ask
 
 router = APIRouter(tags=["ask"])
@@ -17,9 +18,11 @@ def _run(payload: AskIn) -> AskOut:
     sources = [
         SourceOut(
             source=hit.source,
-            title=hit.title,
+            title=stable_title(hit.title, hit.source),
             score=round(hit.score, 4),
             excerpt=hit.text[:280],
+            chunk_id=hit.chunk_id or None,
+            heading=(hit.heading or None),
         )
         for hit in result.hits
     ]

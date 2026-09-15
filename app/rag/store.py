@@ -26,6 +26,7 @@ class Hit:
     source: str
     title: str
     score: float
+    heading: str = ""
 
 
 class VectorStore(Protocol):
@@ -34,6 +35,8 @@ class VectorStore(Protocol):
     def replace_all(self, chunks: list[Chunk], embeddings: np.ndarray) -> int: ...
 
     def query(self, vector: np.ndarray, k: int) -> list[Hit]: ...
+
+    def list_chunks(self) -> list[Hit]: ...
 
     def count(self) -> int: ...
 
@@ -83,7 +86,7 @@ class SqliteVectorStore:
                     chunk.title,
                     vec.tobytes(),
                     int(vec.shape[0]),
-                    json.dumps({"index": chunk.index}),
+                    json.dumps({"index": chunk.index, "heading": chunk.heading}),
                 )
             )
         self._conn.executemany(
@@ -101,10 +104,10 @@ class SqliteVectorStore:
             return []
         query = query / qn
         cur = self._conn.execute(
-            "SELECT chunk_id, text, source, title, embedding, dim FROM chunks"
+            "SELECT chunk_id, text, source, title, embedding, dim, meta FROM chunks"
         )
         scored: list[Hit] = []
-        for chunk_id, text, source, title, blob, dim in cur.fetchall():
+        for chunk_id, text, source, title, blob, dim, meta in cur.fetchall():
             stored = np.frombuffer(blob, dtype=np.float32)
             if stored.size != dim or stored.size != query.size:
                 continue
@@ -112,6 +115,11 @@ class SqliteVectorStore:
             if denom == 0:
                 continue
             score = float(np.dot(query, stored / denom))
+            heading = ""
+            try:
+                heading = str(json.loads(meta or "{}").get("heading") or "")
+            except json.JSONDecodeError:
+                heading = ""
             scored.append(
                 Hit(
                     chunk_id=chunk_id,
@@ -119,10 +127,35 @@ class SqliteVectorStore:
                     source=source,
                     title=title,
                     score=score,
+                    heading=heading,
                 )
             )
         scored.sort(key=lambda hit: hit.score, reverse=True)
         return scored[:k]
+
+    def list_chunks(self) -> list[Hit]:
+        """All chunks without vectors — used for BM25 over the full corpus."""
+        cur = self._conn.execute(
+            "SELECT chunk_id, text, source, title, meta FROM chunks"
+        )
+        hits: list[Hit] = []
+        for chunk_id, text, source, title, meta in cur.fetchall():
+            heading = ""
+            try:
+                heading = str(json.loads(meta or "{}").get("heading") or "")
+            except json.JSONDecodeError:
+                heading = ""
+            hits.append(
+                Hit(
+                    chunk_id=chunk_id,
+                    text=text,
+                    source=source,
+                    title=title,
+                    score=0.0,
+                    heading=heading,
+                )
+            )
+        return hits
 
     def count(self) -> int:
         row = self._conn.execute("SELECT COUNT(*) FROM chunks").fetchone()
@@ -173,7 +206,13 @@ class ChromaVectorStore:
             documents=[c.text for c in chunks],
             embeddings=np.asarray(embeddings, dtype=np.float32).tolist(),
             metadatas=[
-                {"source": c.source, "title": c.title, "index": c.index} for c in chunks
+                {
+                    "source": c.source,
+                    "title": c.title,
+                    "index": c.index,
+                    "heading": c.heading,
+                }
+                for c in chunks
             ],
         )
         return len(chunks)
@@ -203,6 +242,30 @@ class ChromaVectorStore:
                     source=str(meta.get("source", "")),
                     title=str(meta.get("title", "")),
                     score=score,
+                    heading=str(meta.get("heading", "")),
+                )
+            )
+        return hits
+
+    def list_chunks(self) -> list[Hit]:
+        n = self.count()
+        if n == 0:
+            return []
+        result = self._collection.get(include=["documents", "metadatas"])
+        ids = result.get("ids") or []
+        docs = result.get("documents") or []
+        metas = result.get("metadatas") or []
+        hits: list[Hit] = []
+        for chunk_id, text, meta in zip(ids, docs, metas, strict=False):
+            meta = meta or {}
+            hits.append(
+                Hit(
+                    chunk_id=str(chunk_id),
+                    text=str(text),
+                    source=str(meta.get("source", "")),
+                    title=str(meta.get("title", "")),
+                    score=0.0,
+                    heading=str(meta.get("heading", "")),
                 )
             )
         return hits

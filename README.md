@@ -2,7 +2,7 @@
 
 FastAPI retrieval-augmented generation (RAG) service that answers questions from local markdown. Sample corpus is a **fictional** company, Vision AI Ops (TraceLight / AlertMesh). Portfolio demo only — no hosted URL, no real customer data, no production secrets.
 
-Built for Days 11–18 of a 30-day AI automation plan. **This repo is the Day 11 scaffold:** clone, ingest, ask. Retrieval quality, evals, and optional LLM polish are later days.
+Built for Days 11–18 of a 30-day AI automation plan. **Days 11–14 are in this repo:** scaffold, token-aware chunking, hybrid BM25 + dense retrieval, an offline eval harness, and citation polish.
 
 Source: [github.com/Birra3324/company-rag-assistant](https://github.com/Birra3324/company-rag-assistant)
 
@@ -45,26 +45,32 @@ If `AUTO_INGEST_ON_STARTUP=true` (default outside tests), the first API boot ing
 
 ```mermaid
 flowchart LR
-  Docs["data/sample_docs/*.md"] --> Ingest["Chunk + embed"]
-  Ingest --> Store[("SQLite cosine index\noptional Chroma")]
+  Docs["data/sample_docs/*.md"] --> Chunk["Token-aware chunks"]
+  Chunk --> Embed["Embed"]
+  Embed --> Store[("SQLite cosine index\noptional Chroma")]
   User["curl /ask"] --> API[FastAPI]
-  API --> Embed["Embed question"]
-  Embed --> Store
-  Store --> Retrieve["Top-k + keyword rerank"]
-  Retrieve --> Gen["Extractive answer\noptional OpenAI / Ollama"]
+  API --> EmbedQ["Embed question"]
+  EmbedQ --> Dense["Dense top-n"]
+  Store --> Dense
+  Store --> BM25["BM25 over corpus"]
+  Dense --> Fuse["Weighted RRF blend"]
+  BM25 --> Fuse
+  Fuse --> Gen["Extractive answer\n+ numbered citations"]
   Gen --> User
 ```
 
-Default path is fully local: **hashing-trick embeddings + SQLite cosine store + extractive answers**. No GPU, no API key, no extra containers.
+Default path is fully local: **hashing-trick embeddings + SQLite cosine store + BM25 hybrid retrieval + extractive answers**. No GPU, no API key, no extra containers.
 
 ## Stack
 
-| Piece | Day 11 default | Optional via env |
+| Piece | Default (offline) | Optional via env |
 | --- | --- | --- |
 | API | FastAPI 3.12, port **8788** | — |
+| Chunking | Header-aware, **token** windows (`CHUNK_SIZE=180`) | — |
 | Embeddings | Local signed hashing (384-d, numpy) | `sentence-transformers` MiniLM, or OpenAI `text-embedding-3-small` |
-| Vector store | SQLite + numpy cosine | `VECTOR_BACKEND=chroma` after `pip install -r requirements-ml.txt` |
-| Generator | Extractive sentences + citations | OpenAI chat, or Ollama (`llama3.2`) |
+| Retrieval | Dense cosine + BM25 fused (RRF) | `VECTOR_BACKEND=chroma` after `pip install -r requirements-ml.txt` |
+| Generator | Extractive sentences + `[n]` citations | OpenAI chat, or Ollama (`llama3.2`) |
+| Eval | `evals/golden.json` + `python -m app.rag.eval_harness` | — |
 | Tests | pytest + TestClient; embeddings/LLM mocked or local hashing | CI never calls OpenAI or loads GPU models |
 
 This is not an iPaaS/RPA demo and does not claim UiPath, Workato, MuleSoft, or ServiceNow.
@@ -83,13 +89,15 @@ Example `200` from `/ask` (shape, not a live capture):
 
 ```json
 {
-  "answer": "Full-time employees receive **20 PTO days** of paid time off each calendar year, accrued monthly...\n\nSources: Time Off and Leave Policy.",
+  "answer": "Full-time employees receive **20 PTO days** of paid time off each calendar year, accrued monthly...\n\nSources: [1] Time Off and Leave Policy.",
   "sources": [
     {
       "source": "02-pto-policy.md",
       "title": "Time Off and Leave Policy",
       "score": 0.41,
-      "excerpt": "## PTO days\n\nFull-time employees receive **20 PTO days** of paid time off..."
+      "excerpt": "## PTO days\n\nFull-time employees receive **20 PTO days** of paid time off...",
+      "chunk_id": "02-pto-policy.md::0001",
+      "heading": "PTO days"
     }
   ],
   "retrieved": 4,
@@ -98,7 +106,7 @@ Example `200` from `/ask` (shape, not a live capture):
 }
 ```
 
-`POST /ask` returns **409** if the store is empty (ingest first).
+`POST /ask` returns **409** if the store is empty (ingest first). Source titles come from the document H1; `chunk_id` and section `heading` are optional extras for citations.
 
 ## Sample documents
 
@@ -112,6 +120,15 @@ Fictional Vision AI Ops content under `data/sample_docs/`:
 
 Drop additional `.md` / `.txt` files in that folder and `POST /ingest` again.
 
+## Chunking (`CHUNK_SIZE`)
+
+`CHUNK_SIZE` and `CHUNK_OVERLAP` are **approximate word tokens**, not characters. A token is an alphanumeric sequence (the same tokenizer the local hashing embedder uses). English prose is ~4 characters per token, so the Day 11 700-character window is about 180 tokens.
+
+- Default `CHUNK_SIZE=180`, `CHUNK_OVERLAP=40`
+- Markdown headings bound sections first
+- Long sections pack paragraphs, then sentences, then token windows
+- The section heading is prepended onto each piece so a split FAQ still retrieves
+
 ## Environment variables
 
 See `.env.example`. Important ones:
@@ -123,6 +140,10 @@ See `.env.example`. Important ones:
 | `OPENAI_API_KEY` | Only when a provider is `openai`. Never hard-coded. |
 | `VECTOR_BACKEND` | `sqlite` (default) or `chroma` |
 | `DOCS_PATH` | Defaults to `data/sample_docs` |
+| `CHUNK_SIZE` | Target tokens per chunk (default 180) |
+| `CHUNK_OVERLAP` | Overlapping tokens (default 40) |
+| `RETRIEVE_K` | Chunks returned to the generator (default 4) |
+| `RETRIEVE_POOL` | Dense shortlist size before BM25 fusion (default 24) |
 | `AUTO_INGEST_ON_STARTUP` | Ingest when the store is empty (`false` in pytest) |
 
 OpenAI and sentence-transformers are **opt-in**. Leaving the key blank keeps the local path.
@@ -147,6 +168,19 @@ python -m pytest
 
 Tests use a temp SQLite file, local hashing (or a mock embedder/generator), and block OpenAI HTTP from the RAG layer. They do not need a GPU, Chroma, or API keys. The same command runs on GitHub Actions (push/PR to `main`, Python 3.12).
 
+## Eval harness
+
+Golden questions live in `evals/golden.json` (expected source files + keywords). The scorer ingests the sample corpus with the default offline stack and checks retrieval + answer/excerpt overlap:
+
+```bash
+python -m app.rag.eval_harness
+python -m app.rag.eval_harness --json
+# or
+scripts/eval.sh
+```
+
+Pass rate must be at least **0.75** (9/12 on the current golden set is the CI floor; the default path usually clears more). No GPU and no API keys. pytest covers the same path in `tests/test_eval_harness.py`.
+
 ## Docker
 
 ```bash
@@ -159,18 +193,25 @@ The image is `python:3.12-slim`. Compose runs only the API; the index lives in a
 ## Project layout
 
 ```
-app/            FastAPI app, settings, RAG pipeline
+app/                FastAPI app, settings, RAG pipeline
+app/rag/chunking.py Token-aware header-aware splitter
+app/rag/retrieve.py BM25 + dense hybrid fusion
+app/rag/eval_harness.py  Offline eval CLI
 data/sample_docs/   Fictional FAQ + policy markdown
-scripts/        ingest.sh, run_dev.sh
-tests/          pytest (mocked / local, no keys)
+evals/golden.json   Golden questions for the sample corpus
+scripts/            ingest.sh, run_dev.sh, eval.sh
+tests/              pytest (mocked / local, no keys)
+docs/status.md      Days 11–18 checklist
 .github/workflows/ci.yml
 ```
 
 ## Status and later days
 
-Day 11: working scaffold, sample docs, local RAG, pytest, Docker, CI.
+**Days 11–14 (this PR):** working scaffold, token-aware chunking, hybrid BM25 + dense retrieval, eval harness, citation fields (`title`, `chunk_id`, `heading`).
 
-Days 12–18 (not in this PR): token-aware chunking, hybrid BM25 + dense retrieval, eval questions, citation highlighting, optional auth, quality tuning for MiniLM/OpenAI embeddings.
+**Days 15–18 (next):** MiniLM default-path polish, citation UI / demo screenshots, optional demo auth, recruiter walkthrough notes.
+
+See [docs/status.md](docs/status.md) for the checklist.
 
 ## License
 

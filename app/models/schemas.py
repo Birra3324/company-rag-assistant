@@ -25,6 +25,8 @@ class SourceOut(BaseModel):
     title: str
     score: float
     excerpt: str
+    chunk_id: str | None = None
+    heading: str | None = None
 
 
 class AskOut(BaseModel):

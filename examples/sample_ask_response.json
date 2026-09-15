@@ -1,11 +1,13 @@
 {
-  "answer": "Full-time employees receive **20 PTO days** of paid time off each calendar year, accrued monthly. Up to **5 unused PTO days** may carry into the next year; the rest expire on 31 December.\n\nSources: Time Off and Leave Policy.",
+  "answer": "Full-time employees receive **20 PTO days** of paid time off each calendar year, accrued monthly. Up to **5 unused PTO days** may carry into the next year; the rest expire on 31 December.\n\nSources: [1] Time Off and Leave Policy.",
   "sources": [
     {
       "source": "02-pto-policy.md",
       "title": "Time Off and Leave Policy",
       "score": 0.55,
-      "excerpt": "## PTO days\n\nFull-time employees receive **20 PTO days** of paid time off..."
+      "excerpt": "## PTO days\n\nFull-time employees receive **20 PTO days** of paid time off...",
+      "chunk_id": "02-pto-policy.md::0001",
+      "heading": "PTO days"
     }
   ],
   "retrieved": 4,

@@ -34,6 +34,9 @@ def test_ask_pto_from_sample_docs(client):
     blob = (body["answer"] + " " + " ".join(s["excerpt"] for s in body["sources"])).lower()
     assert "20" in blob
     assert any("pto" in s["source"] or "pto" in s["title"].lower() for s in body["sources"])
+    assert any(s.get("chunk_id") for s in body["sources"])
+    assert all(s["title"].strip() for s in body["sources"])
+    assert "Sources: [1]" in body["answer"]
 
 
 def test_query_alias(client):

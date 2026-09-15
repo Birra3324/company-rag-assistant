@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "description": "Offline golden questions for the fictional Vision AI Ops sample corpus. expected_sources is an OR list (any listed file in top-k counts). No real customer data.",
+  "docs_path": "data/sample_docs",
+  "cases": [
+    {
+      "id": "pto-days",
+      "question": "How many PTO days do employees receive?",
+      "expected_sources": ["02-pto-policy.md"],
+      "expected_keywords": ["20"]
+    },
+    {
+      "id": "sick-days",
+      "question": "How many sick days do employees get per year?",
+      "expected_sources": ["02-pto-policy.md"],
+      "expected_keywords": ["8"]
+    },
+    {
+      "id": "parental-leave",
+      "question": "How many weeks of paid parental leave do primary caregivers receive?",
+      "expected_sources": ["02-pto-policy.md"],
+      "expected_keywords": ["12"]
+    },
+    {
+      "id": "p1-sla",
+      "question": "What is the P1 support first response time?",
+      "expected_sources": ["04-support-faq.md", "01-company-overview.md"],
+      "expected_keywords": ["30"]
+    },
+    {
+      "id": "eu-residency",
+      "question": "Can we keep TraceLight data in the EU?",
+      "expected_sources": ["04-support-faq.md"],
+      "expected_keywords": ["EU-West"]
+    },
+    {
+      "id": "home-stipend",
+      "question": "What is the home office stipend?",
+      "expected_sources": ["05-remote-work.md"],
+      "expected_keywords": ["150"]
+    },
+    {
+      "id": "hybrid-days",
+      "question": "Which weekdays are Cambridge-area employees asked to be on-site?",
+      "expected_sources": ["05-remote-work.md"],
+      "expected_keywords": ["Tuesday"]
+    },
+    {
+      "id": "mfa-policy",
+      "question": "Is SMS allowed as a second factor for MFA?",
+      "expected_sources": ["03-it-security.md"],
+      "expected_keywords": ["SMS"]
+    },
+    {
+      "id": "no-secrets-in-chat",
+      "question": "Can employees paste live API keys into this knowledge assistant?",
+      "expected_sources": ["03-it-security.md"],
+      "expected_keywords": ["Never"]
+    },
+    {
+      "id": "tracelight-product",
+      "question": "What is TraceLight?",
+      "expected_sources": ["01-company-overview.md"],
+      "expected_keywords": ["TraceLight"]
+    },
+    {
+      "id": "hq-address",
+      "question": "Where is the fictional Vision AI Ops office listed?",
+      "expected_sources": ["01-company-overview.md"],
+      "expected_keywords": ["Cambridge"]
+    },
+    {
+      "id": "p2-sla",
+      "question": "What is the P2 first response time for degraded evaluator runs?",
+      "expected_sources": ["04-support-faq.md", "01-company-overview.md"],
+      "expected_keywords": ["4"]
+    }
+  ]
+}

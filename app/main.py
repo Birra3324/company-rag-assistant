@@ -29,7 +29,7 @@ def create_app() -> FastAPI:
         version=__version__,
         description=(
             "Local RAG knowledge assistant for fictional Vision AI Ops docs. "
-            "Day 11 scaffold — ingest markdown, retrieve chunks, answer questions."
+            "Token-aware chunking, hybrid BM25 + dense retrieval, extractive answers."
         ),
         lifespan=lifespan,
     )

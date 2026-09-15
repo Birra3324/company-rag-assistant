@@ -18,6 +18,8 @@ def test_sqlite_roundtrip(tmp_path):
     hits = store.query(query, k=1)
     assert hits
     assert hits[0].source == "pto.md"
+    listed = store.list_chunks()
+    assert {item.chunk_id for item in listed} == {"a::0", "b::0"}
     store.close()
 
 
