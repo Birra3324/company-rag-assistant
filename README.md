@@ -1,5 +1,7 @@
 # Company RAG Knowledge Assistant
 
+> Open to remote AI automation roles. Email: birragimedi@gmail.com | GitHub: @Birra3324 | LinkedIn: linkedin.com/in/birra-gemedi
+
 FastAPI retrieval-augmented generation (RAG) service that answers questions from local markdown. Sample corpus is a **fictional** company, Vision AI Ops (TraceLight / AlertMesh). Portfolio demo only — no hosted URL, no real customer data, no production secrets.
 
 Built for Days 11–18 of a 30-day AI automation plan. **Days 11–14 are in this repo:** scaffold, token-aware chunking, hybrid BM25 + dense retrieval, an offline eval harness, and citation polish.
