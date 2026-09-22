@@ -48,3 +48,14 @@ def test_eval_source_list_is_or():
     )
     assert scored.retrieval_ok
     assert scored.passed
+
+
+def test_retrieved_keyword_does_not_mask_missing_answer():
+    from app.rag.eval_harness import score_case
+    scored = score_case(
+        {"question": "PTO days?", "expected_sources": ["pto.md"], "expected_keywords": ["20"]},
+        answer="I cannot answer this question.", sources=["pto.md"], excerpts=["Employees get 20 days."],
+    )
+    assert scored.retrieval_ok
+    assert not scored.keyword_ok
+    assert not scored.passed

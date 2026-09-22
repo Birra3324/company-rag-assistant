@@ -15,6 +15,7 @@ _STORE = _TMP / "rag.sqlite3"
 _CHROMA = _TMP / "chroma"
 
 os.environ["APP_ENV"] = "test"
+os.environ["API_KEY"] = "test-rag-key"
 os.environ["LOG_LEVEL"] = "WARNING"
 os.environ["EMBEDDING_PROVIDER"] = "local"
 os.environ["LLM_PROVIDER"] = "extractive"
@@ -84,7 +85,7 @@ def _wipe_default_store() -> None:
 def client():
     reset_settings()
     _wipe_default_store()
-    with TestClient(app) as c:
+    with TestClient(app, headers={"X-API-Key": "test-rag-key"}) as c:
         yield c
     _wipe_default_store()
 

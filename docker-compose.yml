@@ -2,9 +2,10 @@ services:
   api:
     build: .
     ports:
-      - "8788:8788"
+      - "127.0.0.1:8788:8788"
     environment:
       APP_ENV: production
+      API_KEY: ${API_KEY:?Set API_KEY before starting the API}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-local}
       LLM_PROVIDER: ${LLM_PROVIDER:-extractive}
       VECTOR_BACKEND: ${VECTOR_BACKEND:-sqlite}

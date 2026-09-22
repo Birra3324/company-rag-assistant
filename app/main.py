@@ -17,6 +17,8 @@ from app.rag.ingest import maybe_auto_ingest
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
+    if not get_settings().api_key.strip():
+        raise RuntimeError("API_KEY must be configured before starting the service")
     maybe_auto_ingest()
     yield
 

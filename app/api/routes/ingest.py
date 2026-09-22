@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.core.security import require_api_key
 
 from app.core.config import get_settings
 from app.models.schemas import IngestOut
 from app.rag.ingest import ingest_directory
 
-router = APIRouter(tags=["ingest"])
+router = APIRouter(dependencies=[Depends(require_api_key)], tags=["ingest"])
 
 
 @router.post("/ingest", response_model=IngestOut)

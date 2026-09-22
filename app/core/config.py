@@ -15,6 +15,7 @@ class Settings(BaseSettings):
 
     app_name: str = "Company RAG Knowledge Assistant"
     app_env: str = "development"
+    api_key: str = ""
     log_level: str = "INFO"
 
     # local | sentence-transformers | openai

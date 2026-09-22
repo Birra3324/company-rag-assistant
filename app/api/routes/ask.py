@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.core.security import require_api_key
 
 from app.core.config import get_settings
 from app.core.logging import get_request_id
@@ -10,7 +11,7 @@ from app.models.schemas import AskIn, AskOut, SourceOut
 from app.rag.chunking import stable_title
 from app.rag.pipeline import ask
 
-router = APIRouter(tags=["ask"])
+router = APIRouter(dependencies=[Depends(require_api_key)], tags=["ask"])
 
 
 def _run(payload: AskIn) -> AskOut:

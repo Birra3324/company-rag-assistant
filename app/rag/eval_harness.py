@@ -1,7 +1,7 @@
 """Offline eval harness for the sample Vision AI Ops corpus.
 
 Scores retrieval (at least one expected source in top-k) and answer quality
-(expected keywords in the answer or retrieved excerpts). No GPU, no API keys.
+(expected keywords in the answer only). No GPU, no API keys.
 
 CLI::
 
@@ -62,10 +62,6 @@ def load_golden(path: Path | str | None = None) -> dict:
     return json.loads(golden_path.read_text(encoding="utf-8"))
 
 
-def _blob(answer: str, excerpts: list[str]) -> str:
-    return (answer + " " + " ".join(excerpts)).lower()
-
-
 def score_case(case: dict, *, answer: str, sources: list[str], excerpts: list[str]) -> CaseScore:
     expected_sources = list(case.get("expected_sources") or [])
     expected_keywords = list(case.get("expected_keywords") or [])
@@ -77,7 +73,7 @@ def score_case(case: dict, *, answer: str, sources: list[str], excerpts: list[st
     # expected_sources is an OR list: at least one listed file must appear in top-k.
     retrieval_ok = bool(matched) if expected_set else True
 
-    haystack = _blob(answer, excerpts)
+    haystack = answer.lower()
     missing = [kw for kw in expected_keywords if kw.lower() not in haystack]
     hit_rate = (
         (len(expected_keywords) - len(missing)) / len(expected_keywords)

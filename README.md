@@ -4,7 +4,7 @@
 
 FastAPI retrieval-augmented generation (RAG) service that answers questions from local markdown. Sample corpus is a **fictional** company, Vision AI Ops (TraceLight / AlertMesh). Portfolio demo only — no hosted URL, no real customer data, no production secrets.
 
-Built for Days 11–18 of a 30-day AI automation plan. **Days 11–14 are in this repo:** scaffold, token-aware chunking, hybrid BM25 + dense retrieval, an offline eval harness, and citation polish.
+Implemented: token-aware chunking, hybrid BM25 + vector retrieval, source references, an offline evaluation harness, and API-key protection. The default uses local hashing embeddings and extractive answers; optional model integrations do not imply a hosted deployment.
 
 Source: [github.com/Birra3324/company-rag-assistant](https://github.com/Birra3324/company-rag-assistant)
 
@@ -17,6 +17,7 @@ python3 -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 cp .env.example .env
+# Set a strong API_KEY in .env before starting the HTTP service.
 
 # 1) Ingest the five sample FAQ/policy docs
 python -m app.rag.ingest
@@ -28,13 +29,16 @@ uvicorn app.main:app --reload --port 8788
 In another terminal:
 
 ```bash
+export API_KEY="your-private-configured-key"  # same value as .env
 curl -sS http://127.0.0.1:8788/health
 
 curl -sS http://127.0.0.1:8788/ask \
+  -H "X-API-Key: $API_KEY" \
   -H "content-type: application/json" \
   -d '{"question":"How many PTO days do employees receive?"}'
 
 curl -sS http://127.0.0.1:8788/query \
+  -H "X-API-Key: $API_KEY" \
   -H "content-type: application/json" \
   -d '{"question":"Can we keep TraceLight data in the EU?"}'
 ```
@@ -67,7 +71,7 @@ Default path is fully local: **hashing-trick embeddings + SQLite cosine store + 
 
 | Piece | Default (offline) | Optional via env |
 | --- | --- | --- |
-| API | FastAPI 3.12, port **8788** | — |
+| API | FastAPI on Python 3.12, port **8788** | — |
 | Chunking | Header-aware, **token** windows (`CHUNK_SIZE=180`) | — |
 | Embeddings | Local signed hashing (384-d, numpy) | `sentence-transformers` MiniLM, or OpenAI `text-embedding-3-small` |
 | Retrieval | Dense cosine + BM25 fused (RRF) | `VECTOR_BACKEND=chroma` after `pip install -r requirements-ml.txt` |
@@ -172,7 +176,7 @@ Tests use a temp SQLite file, local hashing (or a mock embedder/generator), and 
 
 ## Eval harness
 
-Golden questions live in `evals/golden.json` (expected source files + keywords). The scorer ingests the sample corpus with the default offline stack and checks retrieval + answer/excerpt overlap:
+Golden questions live in `evals/golden.json` (expected source files + keywords). The scorer ingests the sample corpus with the default offline stack and checks source retrieval and expected keywords in the answer alone:
 
 ```bash
 python -m app.rag.eval_harness
@@ -211,10 +215,16 @@ docs/status.md      Days 11–18 checklist
 
 **Days 11–14 (this PR):** working scaffold, token-aware chunking, hybrid BM25 + dense retrieval, eval harness, citation fields (`title`, `chunk_id`, `heading`).
 
-**Days 15–18 (next):** MiniLM default-path polish, citation UI / demo screenshots, optional demo auth, recruiter walkthrough notes.
+**Days 15–18 (next):** MiniLM default-path polish, citation UI / demo screenshots, deployment rate/cost limits, recruiter walkthrough notes.
 
 See [docs/status.md](docs/status.md) for the checklist.
 
 ## License
 
 MIT © 2026 Birra Gemedi
+
+## Access and evaluation boundaries
+
+`POST /ingest`, `/ask`, and `/query` require `X-API-Key`. Startup rejects missing or blank `API_KEY`; health stays public. Compose requires the key and binds to loopback by default. The offline ingestion/evaluation CLI does not use the HTTP API and needs no service key.
+
+The keyword score checks the generated answer alone. Retrieved excerpts can no longer make an empty or incorrect answer pass. This is a small deterministic evaluation, not a benchmark of factual accuracy: semantic correctness, unsupported questions, citation grounding, adversarial inputs, and document-update behavior still require broader evaluation. Add per-user authorization, rate limits, provider-cost controls, monitoring, and corpus lifecycle controls before multi-user hosting.
