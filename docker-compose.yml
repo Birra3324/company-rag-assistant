@@ -13,6 +13,10 @@ services:
       DOCS_PATH: /app/data/sample_docs
       AUTO_INGEST_ON_STARTUP: "true"
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      MAX_TOP_K: ${MAX_TOP_K:-12}
+      MAX_QUESTION_CHARS: ${MAX_QUESTION_CHARS:-2000}
+      MAX_BODY_BYTES: ${MAX_BODY_BYTES:-65536}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-120}
     volumes:
       - rag-index:/app/data/vectorstore
 

@@ -47,6 +47,15 @@ class Settings(BaseSettings):
     min_retrieve_score: float = 0.08
     auto_ingest_on_startup: bool = True
 
+    # Demo safety caps. Defaults match the previous hard-coded /ask bounds
+    # and stay comfortable for local use. Set RATE_LIMIT_PER_MINUTE=0 to
+    # disable the limiter. Schema still rejects bodies above the absolute
+    # ceilings in app/models/schemas.py (8000 chars, top_k 50).
+    max_top_k: int = 12
+    max_question_chars: int = 2000
+    max_body_bytes: int = 65536
+    rate_limit_per_minute: int = 120
+
     @property
     def is_test(self) -> bool:
         return self.app_env.lower() in {"test", "testing"}

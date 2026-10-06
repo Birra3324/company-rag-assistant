@@ -15,7 +15,11 @@ router = APIRouter(dependencies=[Depends(require_api_key)], tags=["ask"])
 
 
 def _run(payload: AskIn) -> AskOut:
-    result = ask(payload.question.strip(), top_k=payload.top_k)
+    settings = get_settings()
+    top_k = payload.top_k
+    if top_k is None:
+        top_k = min(settings.retrieve_k, settings.max_top_k)
+    result = ask(payload.question.strip(), top_k=top_k)
     sources = [
         SourceOut(
             source=hit.source,

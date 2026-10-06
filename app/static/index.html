@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Company RAG Knowledge Assistant</title>
+  <style>
+    :root {
+      --paper: #f3efe6;
+      --ink: #1a2332;
+      --muted: #5c6573;
+      --line: #e0d6c8;
+      --card: #fffdf8;
+      --teal: #0c5c56;
+      --teal-deep: #08443f;
+      --teal-soft: #e4f2f0;
+      --amber: #8a5a12;
+      --danger: #8d2f2f;
+      --danger-soft: #f8ecec;
+      --shadow: 0 18px 40px rgba(26, 35, 50, 0.06);
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 100% -10%, #efe4cf 0%, transparent 55%),
+        var(--paper);
+      font-family: "Iowan Old Style", Palatino, "Palatino Linotype", Georgia, serif;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 820px; margin: 0 auto; padding: 40px 20px 64px; }
+    header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+    .mark {
+      width: 42px; height: 42px; border-radius: 10px;
+      background: var(--teal); color: #f6f3ec;
+      display: grid; place-items: center;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-weight: 700; letter-spacing: 0.04em; font-size: 13px;
+      flex: none;
+    }
+    .brand { display: flex; gap: 14px; align-items: flex-start; }
+    h1 { font-size: 28px; line-height: 1.15; margin: 0 0 6px; font-weight: 600; }
+    .lede { margin: 0; color: var(--muted); max-width: 46ch; }
+    .pill {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px; letter-spacing: 0.04em; text-transform: uppercase;
+      color: var(--teal-deep); background: var(--teal-soft);
+      border-radius: 999px; padding: 6px 10px; white-space: nowrap;
+    }
+    form, .panel {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 16px; box-shadow: var(--shadow);
+    }
+    form { margin-top: 28px; padding: 18px; }
+    label {
+      display: block; font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    input, textarea {
+      width: 100%; border: 1px solid var(--line); background: #fff;
+      border-radius: 10px; padding: 10px 12px; color: var(--ink);
+      font: 16px/1.45 ui-sans-serif, system-ui, sans-serif;
+    }
+    textarea { min-height: 92px; resize: vertical; }
+    input:focus, textarea:focus { outline: 2px solid var(--teal); border-color: transparent; }
+    .hint { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+    .row { margin-top: 14px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .chips button, .ask {
+      font-family: ui-sans-serif, system-ui, sans-serif; cursor: pointer;
+    }
+    .chips button {
+      border: 1px solid var(--line); background: #fff; color: var(--ink);
+      border-radius: 999px; padding: 6px 12px; font-size: 14px;
+    }
+    .chips button:hover { border-color: var(--teal); color: var(--teal-deep); }
+    .actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
+    .ask {
+      background: var(--teal); color: #f7f4ee; border: 0; border-radius: 999px;
+      padding: 10px 18px; font-size: 15px; font-weight: 650;
+    }
+    .ask:disabled { opacity: 0.6; cursor: progress; }
+    .ask:focus-visible, .chips button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+    .status { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px; color: var(--muted); }
+    .banner {
+      margin-top: 16px; padding: 12px 14px; border-radius: 12px;
+      background: var(--danger-soft); color: var(--danger);
+      font-family: ui-sans-serif, system-ui, sans-serif; font-size: 14px;
+    }
+    .panel { margin-top: 18px; padding: 18px 18px 8px; }
+    .panel h2 {
+      margin: 0 0 10px; font-size: 13px; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted); font-weight: 650;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    .answer { font-size: 18px; margin: 0 0 12px; }
+    .meta {
+      font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px;
+      color: var(--muted); margin: 0 0 8px;
+    }
+    details.source {
+      border-top: 1px solid var(--line); padding: 10px 0 12px;
+    }
+    details.source summary {
+      cursor: pointer; list-style: none; display: flex; gap: 10px; align-items: baseline;
+    }
+    details.source summary::-webkit-details-marker { display: none; }
+    .idx {
+      font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px;
+      background: var(--teal-soft); color: var(--teal-deep);
+      border-radius: 999px; min-width: 1.6em; text-align: center; padding: 2px 6px;
+    }
+    .stitle { font-weight: 650; }
+    .sscore {
+      margin-left: auto; font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 12px; color: var(--amber);
+    }
+    dl.cite {
+      display: grid; grid-template-columns: 90px 1fr; gap: 4px 10px;
+      margin: 10px 0 0; font-family: ui-sans-serif, system-ui, sans-serif; font-size: 13px;
+    }
+    dl.cite dt { color: var(--muted); }
+    dl.cite dd { margin: 0; }
+    pre.excerpt {
+      white-space: pre-wrap; margin: 10px 0 0; padding: 10px 12px;
+      background: #f7f3ea; border-radius: 10px;
+      font-family: ui-monospace, "Cascadia Code", monospace; font-size: 13px; line-height: 1.45;
+    }
+    footer {
+      margin-top: 22px; color: var(--muted); font-size: 14px;
+      font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+    footer a { color: var(--teal-deep); }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="mark" aria-hidden="true">VA</div>
+        <div>
+          <h1>Company knowledge assistant</h1>
+          <p class="lede">Ask the fictional Vision AI Ops docs. Answers stay extractive and each claim points at a source chunk.</p>
+        </div>
+      </div>
+      <div class="pill">Local demo</div>
+    </header>
+
+    <form id="ask-form">
+      <div class="row">
+        <label for="api-key">API key</label>
+        <input id="api-key" name="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Same value as API_KEY">
+        <p class="hint">Required for /ask. Stored in this browser tab only — never sent anywhere else.</p>
+      </div>
+      <div class="row">
+        <label for="question">Question</label>
+        <textarea id="question" name="question" required minlength="3" placeholder="How many PTO days do employees receive?"></textarea>
+      </div>
+      <div class="chips" id="chips" aria-label="Sample questions"></div>
+      <div class="actions">
+        <p class="status" id="status">Ready</p>
+        <button class="ask" id="ask" type="submit">Ask</button>
+      </div>
+    </form>
+
+    <div id="error" class="banner hidden" role="alert"></div>
+
+    <section id="result" class="panel hidden" aria-live="polite">
+      <h2>Answer</h2>
+      <p class="answer" id="answer"></p>
+      <p class="meta" id="meta"></p>
+      <h2>Cited sources</h2>
+      <div id="sources"></div>
+    </section>
+
+    <footer>
+      Default path is offline: hashing embeddings, SQLite, BM25 + dense fusion, extractive answers.
+      OpenAPI lives at <a href="/docs">/docs</a>.
+      Walkthrough: <a href="https://github.com/Birra3324/company-rag-assistant/blob/main/docs/walkthrough.md">docs/walkthrough.md</a>.
+    </footer>
+  </div>
+  <script>
+    const SAMPLES = [
+      "How many PTO days do employees receive?",
+      "Can we keep TraceLight data in the EU?",
+      "What is the home office stipend?",
+      "What is the P1 support response time?",
+      "Is SMS allowed as a second factor for MFA?"
+    ];
+    const keyInput = document.getElementById("api-key");
+    const questionInput = document.getElementById("question");
+    const chips = document.getElementById("chips");
+    const form = document.getElementById("ask-form");
+    const askButton = document.getElementById("ask");
+    const statusEl = document.getElementById("status");
+    const errorEl = document.getElementById("error");
+    const resultEl = document.getElementById("result");
+    const answerEl = document.getElementById("answer");
+    const metaEl = document.getElementById("meta");
+    const sourcesEl = document.getElementById("sources");
+
+    const saved = sessionStorage.getItem("rag-api-key");
+    if (saved) keyInput.value = saved;
+
+    SAMPLES.forEach((text) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = text;
+      button.addEventListener("click", () => {
+        questionInput.value = text;
+        questionInput.focus();
+      });
+      chips.appendChild(button);
+    });
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, (ch) => ({
+        "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+      }[ch]));
+    }
+
+    function renderAnswer(text) {
+      return escapeHtml(text).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\n/g, "<br>");
+    }
+
+    function showError(message) {
+      errorEl.textContent = message;
+      errorEl.classList.remove("hidden");
+    }
+
+    function hideError() {
+      errorEl.classList.add("hidden");
+      errorEl.textContent = "";
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      hideError();
+      const apiKey = keyInput.value.trim();
+      const question = questionInput.value.trim();
+      if (!apiKey) {
+        showError("Enter the API key from your .env file.");
+        return;
+      }
+      sessionStorage.setItem("rag-api-key", apiKey);
+      askButton.disabled = true;
+      statusEl.textContent = "Searching the sample docs…";
+      try {
+        const response = await fetch("/ask", {
+          method: "POST",
+          headers: {
+            "content-type": "application/json",
+            "X-API-Key": apiKey
+          },
+          body: JSON.stringify({ question })
+        });
+        const body = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const message = body.error || body.detail || ("Request failed (" + response.status + ")");
+          showError(typeof message === "string" ? message : JSON.stringify(message));
+          statusEl.textContent = "Request failed";
+          return;
+        }
+        answerEl.innerHTML = renderAnswer(body.answer || "");
+        metaEl.textContent = [
+          (body.retrieved || 0) + " chunks",
+          "embeddings: " + (body.embedding_provider || "unknown"),
+          "answer: " + (body.llm_provider || "unknown")
+        ].join(" · ");
+        sourcesEl.replaceChildren();
+        (body.sources || []).forEach((source, index) => {
+          const details = document.createElement("details");
+          details.className = "source";
+          if (index === 0) details.open = true;
+          const summary = document.createElement("summary");
+          summary.innerHTML =
+            '<span class="idx">' + (index + 1) + '</span>' +
+            '<span class="stitle">' + escapeHtml(source.title || source.source || "Untitled") + '</span>' +
+            '<span class="sscore">' + escapeHtml(source.score) + '</span>';
+          const meta = document.createElement("dl");
+          meta.className = "cite";
+          const rows = [
+            ["File", source.source || ""],
+            ["Heading", source.heading || "—"],
+            ["Chunk", source.chunk_id || "—"]
+          ];
+          rows.forEach(([label, value]) => {
+            const dt = document.createElement("dt");
+            dt.textContent = label;
+            const dd = document.createElement("dd");
+            dd.textContent = value;
+            meta.append(dt, dd);
+          });
+          const excerpt = document.createElement("pre");
+          excerpt.className = "excerpt";
+          excerpt.innerHTML = renderAnswer(source.excerpt || "");
+          details.append(summary, meta, excerpt);
+          sourcesEl.appendChild(details);
+        });
+        resultEl.classList.remove("hidden");
+        statusEl.textContent = "Answer grounded in the retrieved chunks";
+      } catch (err) {
+        showError("Could not reach the API. Is the server still running?");
+        statusEl.textContent = "Network error";
+      } finally {
+        askButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

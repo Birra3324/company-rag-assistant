@@ -7,9 +7,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import __version__
-from app.api.routes import ask, health, ingest
+from app.api.routes import ask, health, ingest, ui
 from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
+from app.core.limits import BodySizeLimitMiddleware, RateLimitMiddleware
 from app.core.logging import RequestIdMiddleware, setup_logging
 from app.models.schemas import RootOut
 from app.rag.ingest import maybe_auto_ingest
@@ -35,9 +36,13 @@ def create_app() -> FastAPI:
         ),
         lifespan=lifespan,
     )
+    # Added last runs first: request id wraps the limit checks.
+    application.add_middleware(RateLimitMiddleware)
+    application.add_middleware(BodySizeLimitMiddleware)
     application.add_middleware(RequestIdMiddleware)
     register_exception_handlers(application)
     application.include_router(health.router)
+    application.include_router(ui.router)
     application.include_router(ask.router)
     application.include_router(ingest.router)
 

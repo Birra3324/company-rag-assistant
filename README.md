@@ -4,7 +4,9 @@
 
 FastAPI retrieval-augmented generation (RAG) service that answers questions from local markdown. Sample corpus is a **fictional** company, Vision AI Ops (TraceLight / AlertMesh). Portfolio demo only — no hosted URL, no real customer data, no production secrets.
 
-Implemented: token-aware chunking, hybrid BM25 + vector retrieval, source references, an offline evaluation harness, and API-key protection. The default uses local hashing embeddings and extractive answers; optional model integrations do not imply a hosted deployment.
+Implemented: token-aware chunking, hybrid BM25 + vector retrieval, source citations, a browser page at `/ui`, an offline evaluation harness, and demo API-key / rate limits. The default uses local hashing embeddings and extractive answers. MiniLM, OpenAI, and Ollama are optional and are not required to run the demo.
+
+Hiring-manager walkthrough (about 10 minutes): [docs/walkthrough.md](docs/walkthrough.md).
 
 Source: [github.com/Birra3324/company-rag-assistant](https://github.com/Birra3324/company-rag-assistant)
 
@@ -22,9 +24,15 @@ cp .env.example .env
 # 1) Ingest the five sample FAQ/policy docs
 python -m app.rag.ingest
 
-# 2) Run the API
-uvicorn app.main:app --reload --port 8788
+# 2) Run the API (auto-ingests sample docs when the index is empty)
+uvicorn app.main:app --host 127.0.0.1 --port 8788
 ```
+
+Open [http://127.0.0.1:8788/ui](http://127.0.0.1:8788/ui), paste the same `API_KEY`, and ask a question. Citations expand to the document title, section heading, chunk id, and snippet.
+
+![Ask form with a sample PTO question](docs/ui-ask.png)
+
+![Answer with the cited PTO chunk expanded](docs/ui-answer.png)
 
 In another terminal:
 
@@ -54,7 +62,7 @@ flowchart LR
   Docs["data/sample_docs/*.md"] --> Chunk["Token-aware chunks"]
   Chunk --> Embed["Embed"]
   Embed --> Store[("SQLite cosine index\noptional Chroma")]
-  User["curl /ask"] --> API[FastAPI]
+  User["GET /ui or curl /ask"] --> API[FastAPI]
   API --> EmbedQ["Embed question"]
   EmbedQ --> Dense["Dense top-n"]
   Store --> Dense
@@ -65,13 +73,14 @@ flowchart LR
   Gen --> User
 ```
 
-Default path is fully local: **hashing-trick embeddings + SQLite cosine store + BM25 hybrid retrieval + extractive answers**. No GPU, no API key, no extra containers.
+Default path is fully local: **hashing-trick embeddings + SQLite cosine store + BM25 hybrid retrieval + extractive answers**. No GPU, no vendor API key, no extra containers. The HTTP service still expects a local `API_KEY` you choose yourself.
 
 ## Stack
 
 | Piece | Default (offline) | Optional via env |
 | --- | --- | --- |
-| API | FastAPI on Python 3.12, port **8788** | — |
+| API | FastAPI on Python 3.12, port **8788** | Browser page at `GET /ui` |
+| Limits | Demo API key, 64 KiB body, `top_k` ≤ 12, 120 req/min | `RATE_LIMIT_PER_MINUTE=0` disables the limiter |
 | Chunking | Header-aware, **token** windows (`CHUNK_SIZE=180`) | — |
 | Embeddings | Local signed hashing (384-d, numpy) | `sentence-transformers` MiniLM, or OpenAI `text-embedding-3-small` |
 | Retrieval | Dense cosine + BM25 fused (RRF) | `VECTOR_BACKEND=chroma` after `pip install -r requirements-ml.txt` |
@@ -85,11 +94,14 @@ This is not an iPaaS/RPA demo and does not claim UiPath, Workato, MuleSoft, or S
 
 | Method | Path | Notes |
 | --- | --- | --- |
-| GET | `/` | Service pointers |
-| GET | `/health` | Chunk count, providers, backend |
-| POST | `/ingest` | Re-read `DOCS_PATH` and rebuild the index |
-| POST | `/ask` | `{ "question": "...", "top_k": 4 }` |
-| POST | `/query` | Same body as `/ask` |
+| GET | `/` | Service pointers, including `/ui` |
+| GET | `/ui` | Browser demo: ask a question, expand citations. Public. |
+| GET | `/health` | Chunk count, providers, backend. Public. |
+| POST | `/ingest` | Re-read `DOCS_PATH` and rebuild the index. Requires `X-API-Key`. |
+| POST | `/ask` | `{ "question": "...", "top_k": 4 }`. Requires `X-API-Key`. |
+| POST | `/query` | Same body as `/ask`. Requires `X-API-Key`. |
+
+`POST /ask` returns **413** when the body exceeds `MAX_BODY_BYTES`, **422** when the question or `top_k` exceeds the demo caps, and **429** (`Retry-After`) when the per-process rate limit is hit. `/health` and `/ui` are not rate limited.
 
 Example `200` from `/ask` (shape, not a live capture):
 
@@ -151,10 +163,15 @@ See `.env.example`. Important ones:
 | `RETRIEVE_K` | Chunks returned to the generator (default 4) |
 | `RETRIEVE_POOL` | Dense shortlist size before BM25 fusion (default 24) |
 | `AUTO_INGEST_ON_STARTUP` | Ingest when the store is empty (`false` in pytest) |
+| `API_KEY` | Required to boot. Sent as `X-API-Key` on `/ask`, `/query`, `/ingest` |
+| `MAX_TOP_K` | Tightens `top_k` (default 12; absolute ceiling 50) |
+| `MAX_QUESTION_CHARS` | Tightens question length (default 2000; absolute ceiling 8000) |
+| `MAX_BODY_BYTES` | Rejects larger POST bodies with 413 (default 65536) |
+| `RATE_LIMIT_PER_MINUTE` | Cap for `/ask`, `/query`, `/ingest` (default 120; `0` disables) |
 
 OpenAI and sentence-transformers are **opt-in**. Leaving the key blank keeps the local path.
 
-Better local embeddings (downloads MiniLM on first use):
+Optional MiniLM embeddings (downloads `sentence-transformers/all-MiniLM-L6-v2` on first use; not used in CI):
 
 ```bash
 pip install -r requirements-ml.txt
@@ -162,6 +179,8 @@ pip install -r requirements-ml.txt
 EMBEDDING_PROVIDER=sentence-transformers
 VECTOR_BACKEND=chroma   # optional
 ```
+
+Re-run ingest after changing `EMBEDDING_PROVIDER`. Hashing vectors and MiniLM vectors are not interchangeable. `tests/test_sentence_transformers_optional.py` stubs the library, so the default hashing path and CI never need a GPU, a model download, or network access to Hugging Face.
 
 ## Testing
 
@@ -200,24 +219,25 @@ The image is `python:3.12-slim`. Compose runs only the API; the index lives in a
 
 ```
 app/                FastAPI app, settings, RAG pipeline
+app/static/         Single-page citation UI served at /ui
 app/rag/chunking.py Token-aware header-aware splitter
 app/rag/retrieve.py BM25 + dense hybrid fusion
 app/rag/eval_harness.py  Offline eval CLI
 data/sample_docs/   Fictional FAQ + policy markdown
 evals/golden.json   Golden questions for the sample corpus
-scripts/            ingest.sh, run_dev.sh, eval.sh
+scripts/            ingest.sh, run_dev.sh, eval.sh, capture_ui.py
 tests/              pytest (mocked / local, no keys)
+docs/walkthrough.md Recruiter / hiring-manager walkthrough
 docs/status.md      Days 11–18 checklist
+docs/ui-*.png       Screenshots from a headless run of /ui
 .github/workflows/ci.yml
 ```
 
-## Status and later days
+## Status
 
-**Days 11–14 (this PR):** working scaffold, token-aware chunking, hybrid BM25 + dense retrieval, eval harness, citation fields (`title`, `chunk_id`, `heading`).
+**Days 11–18 are done.** The demo is frozen for review: offline hashing path, optional MiniLM, citation UI, demo API key and request limits, screenshots, and [docs/walkthrough.md](docs/walkthrough.md).
 
-**Days 15–18 (next):** MiniLM default-path polish, citation UI / demo screenshots, deployment rate/cost limits, recruiter walkthrough notes.
-
-See [docs/status.md](docs/status.md) for the checklist.
+See [docs/status.md](docs/status.md) for the checklist. The golden harness currently passes **11/12** (rate 0.92, floor 0.75) on the default offline stack.
 
 ## License
 
@@ -227,4 +247,4 @@ MIT © 2026 Birra Gemedi
 
 `POST /ingest`, `/ask`, and `/query` require `X-API-Key`. Startup rejects missing or blank `API_KEY`; health stays public. Compose requires the key and binds to loopback by default. The offline ingestion/evaluation CLI does not use the HTTP API and needs no service key.
 
-The keyword score checks the generated answer alone. Retrieved excerpts can no longer make an empty or incorrect answer pass. This is a small deterministic evaluation, not a benchmark of factual accuracy: semantic correctness, unsupported questions, citation grounding, adversarial inputs, and document-update behavior still require broader evaluation. Add per-user authorization, rate limits, provider-cost controls, monitoring, and corpus lifecycle controls before multi-user hosting.
+The keyword score checks the generated answer alone. Retrieved excerpts can no longer make an empty or incorrect answer pass. This is a small deterministic evaluation, not a benchmark of factual accuracy: semantic correctness, unsupported questions, citation grounding, adversarial inputs, and document-update behavior still require broader evaluation. The in-process rate limit and shared demo key are enough for a local review. Per-user authorization, distributed limits, provider-cost controls, monitoring, and corpus lifecycle controls still belong in front of any multi-user host. See [docs/walkthrough.md](docs/walkthrough.md).
