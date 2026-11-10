@@ -1,4 +1,4 @@
-"""Offline eval harness for the sample Vision AI Ops corpus.
+"""Offline eval harness for the sample Northwind Systems corpus.
 
 Scores retrieval (at least one expected source in top-k) and answer quality
 (expected keywords in the answer only). No GPU, no API keys.

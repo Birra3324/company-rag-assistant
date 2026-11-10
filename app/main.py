@@ -31,7 +31,7 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         version=__version__,
         description=(
-            "Local RAG knowledge assistant for fictional Vision AI Ops docs. "
+            "Local RAG knowledge assistant for fictional Northwind Systems docs. "
             "Token-aware chunking, hybrid BM25 + dense retrieval, extractive answers."
         ),
         lifespan=lifespan,

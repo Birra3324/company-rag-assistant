@@ -151,7 +151,7 @@ class OpenAIGenerator(Generator):
             for hit in hits
         )
         system = (
-            "You are the Vision AI Ops company knowledge assistant. "
+            "You are the Northwind Systems company knowledge assistant. "
             "Answer only from the provided context. If the context is missing "
             "the answer, say you do not know. Cite source titles. "
             "This is a fictional portfolio demo — never invent secrets."

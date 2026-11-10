@@ -8,7 +8,7 @@ Hiring-manager walkthrough: [docs/walkthrough.md](walkthrough.md).
 
 | Day | Intent | Status |
 | --- | --- | --- |
-| 11 | Scaffold FastAPI + ingest + ask + sample Vision AI Ops docs + pytest + Docker + CI | **Done** |
+| 11 | Scaffold FastAPI + ingest + ask + sample Northwind Systems docs + pytest + Docker + CI | **Done** |
 | 12 | Token-aware / header-aware chunking; hybrid BM25 + dense retrieval (offline default) | **Done** |
 | 13 | Eval harness: golden questions + CLI/pytest scorer, no GPU or API keys | **Done** |
 | 14 | Citation polish (`title`, optional `chunk_id` / `heading`); README + this checklist | **Done** |
@@ -74,6 +74,6 @@ Hiring-manager walkthrough: [docs/walkthrough.md](walkthrough.md).
 
 Constraints that stay true for the whole track:
 
-- Fictional Vision AI Ops docs only
+- Fictional Northwind Systems docs only
 - No real API keys, Slack tokens, or customer traces in git
 - No UiPath / Workato / MuleSoft / ServiceNow claims

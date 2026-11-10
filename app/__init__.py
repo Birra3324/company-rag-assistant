@@ -1,3 +1,3 @@
-"""Company RAG Knowledge Assistant — Vision AI Ops (fictional portfolio demo)."""
+"""Company RAG Knowledge Assistant — Northwind Systems (fictional portfolio demo)."""
 
 __version__ = "0.3.0"

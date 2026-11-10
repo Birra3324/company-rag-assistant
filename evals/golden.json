@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Offline golden questions for the fictional Vision AI Ops sample corpus. expected_sources is an OR list (any listed file in top-k counts). No real customer data.",
+  "description": "Offline golden questions for the fictional Northwind Systems sample corpus. expected_sources is an OR list (any listed file in top-k counts). No real customer data.",
   "docs_path": "data/sample_docs",
   "cases": [
     {
@@ -65,9 +65,9 @@
     },
     {
       "id": "hq-address",
-      "question": "Where is the fictional Vision AI Ops office listed?",
+      "question": "Where is the fictional Northwind Systems office listed?",
       "expected_sources": ["01-company-overview.md"],
-      "expected_keywords": ["Cambridge"]
+      "expected_keywords": ["Cambridge", "Harbor"]
     },
     {
       "id": "p2-sla",

@@ -2,7 +2,7 @@
 
 _Fictional security policy. Contains no real API keys, tokens, or customer data._
 
-Vision AI Ops treats production credentials as secrets. **Never paste live API keys, Slack tokens, or customer prompts into chat, tickets, or this knowledge assistant.**
+Northwind Systems treats production credentials as secrets. **Never paste live API keys, Slack tokens, or customer prompts into chat, tickets, or this knowledge assistant.**
 
 ## Accounts and MFA
 
@@ -12,9 +12,9 @@ Vision AI Ops treats production credentials as secrets. **Never paste live API k
 
 ## Acceptable use
 
-- Company GitHub orgs are for Vision AI Ops work only. Do not push private customer datasets.
+- Company GitHub orgs are for Northwind Systems work only. Do not push private customer datasets.
 - Sample documents in this repository are fictional. Do not replace them with real customer transcripts.
-- Phishing: if a message asks you to "confirm your Okta password", report it to security@visionaiops.example — that mailbox is fictional as well.
+- Phishing: if a message asks you to "confirm your Okta password", report it to security@northwind.example — that mailbox is fictional as well.
 
 ## Incident reporting
 

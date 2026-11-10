@@ -6,7 +6,7 @@ from app.rag.embeddings import HashingEmbedder, OpenAIEmbedder, get_embedder
 
 def test_hashing_embedder_is_normalized():
     emb = HashingEmbedder(dim=64)
-    vecs = emb.embed(["Vision AI Ops PTO policy", "unrelated zucchini recipes"])
+    vecs = emb.embed(["Northwind Systems PTO policy", "unrelated zucchini recipes"])
     assert vecs.shape == (2, 64)
     norms = np.linalg.norm(vecs, axis=1)
     assert np.allclose(norms, 1.0, atol=1e-5)
