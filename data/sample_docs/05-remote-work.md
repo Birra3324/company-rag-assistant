@@ -1,8 +1,8 @@
 # Remote Work and Expenses
 
-_Fictional workplace policy for Vision AI Ops. Portfolio sample only._
+_Fictional workplace policy for Northwind Systems. Portfolio sample only._
 
-Vision AI Ops is **hybrid**. Employees within 50 miles of the Cambridge listing are asked to be on-site **Tuesdays and Thursdays**. Everyone else is remote-first. Core overlap hours are **11:00–16:00 US/Eastern** for customer-facing roles.
+Northwind Systems is **hybrid**. Employees within 50 miles of the Cambridge listing are asked to be on-site **Tuesdays and Thursdays**. Everyone else is remote-first. Core overlap hours are **11:00–16:00 US/Eastern** for customer-facing roles.
 
 ## Home office stipend
 

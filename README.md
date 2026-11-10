@@ -1,8 +1,10 @@
 # Company RAG Knowledge Assistant
 
-> Open to remote AI automation roles. Email: birragimedi@gmail.com | GitHub: @Birra3324 | LinkedIn: linkedin.com/in/birra-gemedi
+[![CI](https://github.com/Birra3324/company-rag-assistant/actions/workflows/ci.yml/badge.svg)](https://github.com/Birra3324/company-rag-assistant/actions/workflows/ci.yml)
 
-FastAPI retrieval-augmented generation (RAG) service that answers questions from local markdown. Sample corpus is a **fictional** company, Vision AI Ops (TraceLight / AlertMesh). Portfolio demo only — no hosted URL, no real customer data, no production secrets.
+> Open to remote AI automation roles. Email: birragemedi@gmail.com | GitHub: @Birra3324 | LinkedIn: https://www.linkedin.com/in/birra-gemedi-813337199/
+
+FastAPI retrieval-augmented generation (RAG) service that answers questions from local markdown. Sample corpus is a **fictional** company, Northwind Systems (domain northwind.example; products TraceLight / AlertMesh). Portfolio demo only — no hosted URL, no real customer data, no production secrets.
 
 Implemented: token-aware chunking, hybrid BM25 + vector retrieval, source citations, a browser page at `/ui`, an offline evaluation harness, and demo API-key / rate limits. The default uses local hashing embeddings and extractive answers. MiniLM, OpenAI, and Ollama are optional and are not required to run the demo.
 
@@ -128,7 +130,7 @@ Example `200` from `/ask` (shape, not a live capture):
 
 ## Sample documents
 
-Fictional Vision AI Ops content under `data/sample_docs/`:
+Fictional Northwind Systems content under `data/sample_docs/`:
 
 1. Company overview (TraceLight, AlertMesh, Cambridge listing)
 2. PTO and leave (20 PTO days, 8 sick days, parental leave)

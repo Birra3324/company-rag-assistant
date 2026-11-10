@@ -1,6 +1,6 @@
 # Time Off and Leave Policy
 
-_Fictional HR policy for Vision AI Ops employees. Portfolio sample only._
+_Fictional HR policy for Northwind Systems employees. Portfolio sample only._
 
 ## PTO days
 

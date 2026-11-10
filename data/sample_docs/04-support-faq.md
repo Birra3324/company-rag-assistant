@@ -4,7 +4,7 @@ _Fictional support FAQ for TraceLight and AlertMesh. No real customer names._
 
 ## How do I open a ticket?
 
-Email support@visionaiops.example or use the TraceLight workspace **Help → Contact support**. Include the workspace slug (for example `acme-demo`) and the trace ID. Do not attach production `.env` files.
+Email support@northwind.example or use the TraceLight workspace **Help → Contact support**. Include the workspace slug (for example `acme-demo`) and the trace ID. Do not attach production `.env` files.
 
 ## What are the P1 support SLAs?
 
@@ -22,7 +22,7 @@ Yes. Choose **EU-West** when the workspace is created. Residency cannot be switc
 
 ## Does TraceLight train on our prompts?
 
-No. TraceLight Cloud does not use customer traces to train foundation models. Optional LLM-as-judge evaluators call the customer's own provider key. Keys stay in the customer's secrets manager — Vision AI Ops never stores raw provider keys in this demo dataset.
+No. TraceLight Cloud does not use customer traces to train foundation models. Optional LLM-as-judge evaluators call the customer's own provider key. Keys stay in the customer's secrets manager — Northwind Systems never stores raw provider keys in this demo dataset.
 
 ## AlertMesh webhook format
 

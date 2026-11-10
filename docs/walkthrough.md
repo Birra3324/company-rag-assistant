@@ -1,6 +1,6 @@
 # Recruiter walkthrough
 
-A 10-minute look at the local RAG assistant. The corpus is fictional (Vision AI Ops). There is no hosted URL and no customer data.
+A 10-minute look at the local RAG assistant. The corpus is fictional (Northwind Systems, domain northwind.example). There is no hosted URL and no customer data.
 
 ## What problem this solves
 
